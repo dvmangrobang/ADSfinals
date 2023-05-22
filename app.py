@@ -1,3 +1,5 @@
+pip install streamlit pandas tensorflow scikit-learn imbalanced-learn matplotlib
+
 import streamlit as st
 import pandas as pd
 import tensorflow as tf
