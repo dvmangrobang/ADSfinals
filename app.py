@@ -1,106 +1,61 @@
 import streamlit as st
 import pandas as pd
+import numpy as np
+from sklearn.preprocessing import MinMaxScaler
 import tensorflow as tf
-from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import LabelEncoder, MinMaxScaler
-from imblearn.over_sampling import SMOTE
-from collections import Counter
-import matplotlib.pyplot as plt
 
-def main():
-    st.title('Bank Customer Churn Prediction App')
-    st.write('This app predicts customer churn using a deep learning model.')
+@st.cache(allow_output_mutation=True)
+def load_model():
+    model = tf.keras.models.load_model('bank_customer_churn_prediction.h5')
+    return model
 
-    # Read dataset
-    df = pd.read_csv("Bank Customer Churn Prediction.csv")
-    del df["customer_id"] # Delete customer_id column
-    st.write("Dataset:")
-    st.dataframe(df)
+model = load_model()
 
-    # Customer churn count
-    customer_churn = df["churn"].value_counts()
-    st.write("Customer Churn:")
-    st.write(customer_churn)
+st.title('Bank Customer Churn Prediction App')
+st.write('This app predicts customer churn using a deep learning model.')
 
-    # Create a donut chart
-    labels = customer_churn.index
-    counts = customer_churn.values
-    percentages = counts / counts.sum() * 100
+st.write("Please enter the following information:")
 
-    fig, ax = plt.subplots()
-    ax.pie(percentages, labels=labels, autopct='%1.1f%%', startangle=90, wedgeprops=dict(width=0.4))
-    ax.set_title('Customer Churn')
-    circle = plt.Circle((0, 0), 0.3, color='white')
-    ax.add_artist(circle)
-    ax.axis('equal')
-    st.pyplot(fig)
+credit_score = st.slider("Credit Score", 300, 850, step=1)
+age = st.slider("Age", 18, 100, step=1)
+tenure = st.slider("Tenure (Number of years)", 0, 10, step=1)
+balance = st.number_input("Account Balance")
+num_of_products = st.slider("Number of Products", 1, 4, step=1)
+has_credit_card = st.selectbox("Has Credit Card", ["No", "Yes"])
+is_active_member = st.selectbox("Is Active Member", ["No", "Yes"])
+estimated_salary = st.number_input("Estimated Salary")
 
-    # Assign female=0, male=1 using LabelEncoder
-    le = LabelEncoder()
-    df["gender"] = le.fit_transform(df["gender"])
+gender = st.radio("Gender", ["Female", "Male"])
+geography = st.selectbox("Geography", ["France", "Germany", "Spain"])
 
-    # Drop churn column
-    data = df.drop("churn", axis=1)
+# Prepare input data
+data = {
+    "credit_score": [credit_score],
+    "gender": [0 if gender == "Female" else 1],
+    "age": [age],
+    "tenure": [tenure],
+    "balance": [balance],
+    "products_number": [num_of_products],
+    "credit_card": [1 if has_credit_card == "Yes" else 0],
+    "active_member": [1 if is_active_member == "Yes" else 0],
+    "estimated_salary": [estimated_salary],
+    "country_France": [1 if geography == "France" else 0],
+    "country_Germany": [1 if geography == "Germany" else 0],
+    "country_Spain": [1 if geography == "Spain" else 0]
+}
 
-    # Convert categorical data to 1 or 0 for countries
-    data = pd.get_dummies(data, columns=["country"])
+df = pd.DataFrame(data)
 
-    X = data.values # Features (credit_score to country_Spain column)
-    y = df["churn"].values # Target (churn column)
+# Scale the input data
+scaler = MinMaxScaler()
+scaled_data = scaler.fit_transform(df)
 
-    # Resample data using SMOTE
-    smote = SMOTE()
-    X_resampled, y_resampled = smote.fit_resample(X, y)
+# Make predictions
+prediction = model.predict(scaled_data)[-1]  # Get the prediction for the last row (user input)
+prediction = (prediction > 0.5)
 
-    # Count the values in y_resampled
-    counter = Counter(y_resampled)
-    st.write("Customer Churn after resampling:")
-    st.write(counter)
-
-    # Create a donut chart after resampling
-    labels = counter.keys()
-    counts = counter.values()
-    percentages = [count / sum(counts) * 100 for count in counts]
-
-    fig, ax = plt.subplots()
-    ax.pie(percentages, labels=labels, autopct='%1.1f%%', startangle=90, wedgeprops=dict(width=0.4))
-    ax.set_title('Customer Churn')
-    circle = plt.Circle((0, 0), 0.3, color='white')
-    ax.add_artist(circle)
-    ax.axis('equal')
-    st.pyplot(fig)
-
-    # Transform data using MinMaxScaler, range 0 to 1
-    scaler = MinMaxScaler()
-    X_scaled = scaler.fit_transform(X_resampled)
-
-    # Train-test split
-    X_train, X_test, y_train, y_test = train_test_split(X_scaled, y_resampled, test_size=0.25, random_state=250)
-
-    # Define the model
-    model = tf.keras.models.Sequential([
-        tf.keras.layers.Dense(units=16, activation='relu'),
-        tf.keras.layers.Dense(units=8, activation='relu'),
-        tf.keras.layers.Dense(units=1, activation='sigmoid')
-    ])
-
-    # Compile the model
-    model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
-
-    # Train the model
-    model.fit(X_train, y_train, epochs=100, batch_size=32)
-
-    # Evaluate the model
-    results = model.evaluate(X_test, y_test, verbose=1)
-    st.write('Test loss, Test accuracy:', results)
-
-    # Make predictions
-    y_pred = model.predict(X_test)
-    y_pred = (y_pred > 0.5) # Convert probabilities to binary predictions
-
-    st.write("Predictions:")
-    st.write(y_pred)
-
-
-if __name__ == '__main__':
-    main()
+st.write("Prediction:")
+if prediction:
+    st.write("The customer is likely to churn.")
+else:
+    st.write("The customer is likely to stay.")
