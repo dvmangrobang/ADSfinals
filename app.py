@@ -1,11 +1,12 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
-import tensorflow as tf
+import pickle
 
 @st.cache(allow_output_mutation=True)
 def load_model():
-    model = tf.keras.models.load_model('bank_customer_churn_prediction.h5')
+    with open('bank_customer_churn_prediction_model.pkl', 'rb') as file:
+        model = pickle.load(file)
     return model
 
 model = load_model()
@@ -34,7 +35,7 @@ def scale_data(data):
     return pd.DataFrame([scaled_data])
 
 st.title('Bank Customer Churn Prediction App')
-st.write('This app predicts customer churn using a deep learning model.')
+st.write('This app predicts customer churn using a pre-trained model.')
 
 st.write("Please enter the following information:")
 
