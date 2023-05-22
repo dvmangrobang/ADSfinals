@@ -1,7 +1,6 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
-from sklearn.preprocessing import MinMaxScaler
 import tensorflow as tf
 
 @st.cache(allow_output_mutation=True)
@@ -10,6 +9,29 @@ def load_model():
     return model
 
 model = load_model()
+
+def scale_data(data):
+    # Define the scaling ranges for each feature
+    scaling_ranges = {
+        "credit_score": (300, 850),
+        "age": (18, 100),
+        "tenure": (0, 10),
+        "balance": (0, 250000),
+        "products_number": (1, 4),
+        "credit_card": (0, 1),
+        "active_member": (0, 1),
+        "estimated_salary": (0, 500000),
+        "country_France": (0, 1),
+        "country_Germany": (0, 1),
+        "country_Spain": (0, 1)
+    }
+
+    scaled_data = {}
+    for feature, (min_val, max_val) in scaling_ranges.items():
+        scaled_val = (data[feature] - min_val) / (max_val - min_val)
+        scaled_data[feature] = scaled_val
+
+    return pd.DataFrame([scaled_data])
 
 st.title('Bank Customer Churn Prediction App')
 st.write('This app predicts customer churn using a deep learning model.')
@@ -30,28 +52,24 @@ geography = st.selectbox("Geography", ["France", "Germany", "Spain"])
 
 # Prepare input data
 data = {
-    "credit_score": [credit_score],
-    "gender": [0 if gender == "Female" else 1],
-    "age": [age],
-    "tenure": [tenure],
-    "balance": [balance],
-    "products_number": [num_of_products],
-    "credit_card": [1 if has_credit_card == "Yes" else 0],
-    "active_member": [1 if is_active_member == "Yes" else 0],
-    "estimated_salary": [estimated_salary],
-    "country_France": [1 if geography == "France" else 0],
-    "country_Germany": [1 if geography == "Germany" else 0],
-    "country_Spain": [1 if geography == "Spain" else 0]
+    "credit_score": credit_score,
+    "gender": 0 if gender == "Female" else 1,
+    "age": age,
+    "tenure": tenure,
+    "balance": balance,
+    "products_number": num_of_products,
+    "credit_card": 1 if has_credit_card == "Yes" else 0,
+    "active_member": 1 if is_active_member == "Yes" else 0,
+    "estimated_salary": estimated_salary,
+    "country_France": 1 if geography == "France" else 0,
+    "country_Germany": 1 if geography == "Germany" else 0,
+    "country_Spain": 1 if geography == "Spain" else 0
 }
 
-df = pd.DataFrame(data)
-
-# Scale the input data
-scaler = MinMaxScaler()
-scaled_data = scaler.fit_transform(df)
+df = scale_data(data)
 
 # Make predictions
-prediction = model.predict(scaled_data)[-1]  # Get the prediction for the last row (user input)
+prediction = model.predict(df)[-1]  # Get the prediction for the last row (user input)
 prediction = (prediction > 0.5)
 
 st.write("Prediction:")
