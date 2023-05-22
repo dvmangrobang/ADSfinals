@@ -1,5 +1,3 @@
-pip install streamlit pandas tensorflow scikit-learn imbalanced-learn matplotlib
-
 import streamlit as st
 import pandas as pd
 import numpy as np
@@ -56,63 +54,8 @@ scaled_data = scaler.fit_transform(df)
 prediction = model.predict(scaled_data)[-1]  # Get the prediction for the last row (user input)
 prediction = (prediction > 0.5)
 
-<<<<<<< HEAD
 st.write("Prediction:")
 if prediction:
     st.write("The customer is likely to churn.")
 else:
     st.write("The customer is likely to stay.")
-=======
-    # Count the values in y_resampled
-    counter = Counter(y_resampled)
-    st.write("Customer Churn after resampling:")
-    st.write(counter)
-
-    # Create a donut chart after resampling
-    labels = counter.keys()
-    counts = counter.values()
-    percentages = [count / sum(counts) * 100 for count in counts]
-
-    fig, ax = plt.subplots()
-    ax.pie(percentages, labels=labels, autopct='%1.1f%%', startangle=90, wedgeprops=dict(width=0.4))
-    ax.set_title('Customer Churn')
-    circle = plt.Circle((0, 0), 0.3, color='white')
-    ax.add_artist(circle)
-    ax.axis('equal')
-    st.pyplot(fig)
-
-    # Transform data using MinMaxScaler, range 0 to 1
-    scaler = MinMaxScaler()
-    X_scaled = scaler.fit_transform(X_resampled)
-
-    # Train-test split
-    X_train, X_test, y_train, y_test = train_test_split(X_scaled, y_resampled, test_size=0.25, random_state=250)
-
-    # Define the model
-    model = tf.keras.models.Sequential([
-        tf.keras.layers.Dense(units=16, activation='relu'),
-        tf.keras.layers.Dense(units=8, activation='relu'),
-        tf.keras.layers.Dense(units=1, activation='sigmoid')
-    ])
-
-    # Compile the model
-    model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
-
-    # Train the model
-    model.fit(X_train, y_train, epochs=100, batch_size=32)
-
-    # Evaluate the model
-    results = model.evaluate(X_test, y_test, verbose=1)
-    st.write('Test loss, Test accuracy:', results)
-
-    # Make predictions
-    y_pred = model.predict(X_test)
-    y_pred = (y_pred > 0.5) # Convert probabilities to binary predictions
-
-    st.write("Predictions:")
-    st.write(y_pred)
-
-
-if __name__ == '__main__':
-    main()
->>>>>>> 1e379da26159bc0f82466e033319ec5e77156712
