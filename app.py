@@ -1,7 +1,5 @@
 import streamlit as st
 import tensorflow as tf
-import cv2
-from PIL import Image, ImageOps
 import numpy as np
 
 @st.cache(allow_output_mutation=True)
@@ -15,33 +13,19 @@ st.write("""
 # Iris Flower Detection
 """)
 
-file = st.file_uploader("Choose an image of an iris flower", type=["jpg", "png"])
+sepal_length = st.number_input("Enter the Sepal Length (cm)")
+sepal_width = st.number_input("Enter the Sepal Width (cm)")
+petal_length = st.number_input("Enter the Petal Length (cm)")
+petal_width = st.number_input("Enter the Petal Width (cm)")
 
-def import_and_predict(image_data, model):
-    size = (128, 128)
+input_data = np.array([[sepal_length, sepal_width, petal_length, petal_width]])
 
-    # Resize the image to the expected input shape of the model
-    image = ImageOps.fit(image_data, size, Image.ANTIALIAS)
-    img = np.asarray(image)
-    img = cv2.resize(img, (128, 128), interpolation=cv2.INTER_NEAREST)
-
-    # Convert the image to grayscale if necessary
-    if img.ndim == 3 and img.shape[2] == 3:
-        img = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
-
-    # Reshape the image to add a channel dimension
-    img_reshape = img.reshape((1,) + img.shape + (1,))
-
-    # Make predictions using the Keras model
-    prediction = model.predict(img_reshape)
+def predict_iris_class(input_data, model):
+    prediction = model.predict(input_data)
     return prediction
 
-if file is None:
-    st.text("Please upload an image file")
-else:
-    image = Image.open(file)
-    st.image(image, use_column_width=True)
-    prediction = import_and_predict(image, model)
+if st.button("Predict"):
+    prediction = predict_iris_class(input_data, model)
     class_names = ['Setosa', 'Versicolor', 'Virginica']
     result = class_names[np.argmax(prediction)]
     st.success("Predicted Iris Flower Class: " + result)
